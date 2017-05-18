@@ -1,0 +1,1181 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; SSR.s
+    2 00000000         ;*******************Direcciones del puerto D************
+                       **********************************
+    3 00000000 4005B3FC 
+                       GPIO_PORTN1
+                               EQU              0x4005B3FC  ;GPIO Port D (AHB) 
+                                                            0x4005B000 base de 
+                                                            datos
+    4 00000000 4005B400 
+                       GPIO_PORTN_DIR_R
+                               EQU              0x4005B400  ;Offset 0x400=>  0 
+                                                            es entrada, 1 salid
+                                                            a
+    5 00000000 4005B420 
+                       GPIO_PORTN_AFSEL_R
+                               EQU              0x4005B420  ;Offset 0x420=>  0 
+                                                            funcion como GPIO, 
+                                                            1 funciona como per
+                                                            iferico
+    6 00000000 4005B51C 
+                       GPIO_PORTN_DEN_R
+                               EQU              0x4005B51C  ;Offset 0x51C=>  0 
+                                                            funcina como NO dig
+                                                            ital, 1 funcion dig
+                                                            ital
+    7 00000000 4005B528 
+                       GPIO_PORTN_AMSEL_R
+                               EQU              0x4005B528  ;Offset 0x528=>  0 
+                                                            Deshabilita funcion
+                                                             analogica, 1 activ
+                                                            a analogica
+    8 00000000 4005B52C 
+                       GPIO_PORTN_PCTL_R
+                               EQU              0x4005B52C  ;Offset 0x52C=>  0 
+                                                            Selecciona funcion 
+                                                            alternativa
+    9 00000000 4005B520 
+                       GPIO_PORTN_LOCK
+                               EQU              0X4005B520
+   10 00000000 4005B524 
+                       GPIO_PORTN_CR
+                               EQU              0X4005B524
+   11 00000000         
+   12 00000000         ;--------Direccion para activar y verificar puertos-----
+                       -------------------------------------
+   13 00000000 400FE608 
+                       SYSCTL_RCGCGPIO_R
+                               EQU              0x400FE608  ;Base 0x400F.E000, 
+                                                            Offset 0x608=> 1 ac
+                                                            tiva puerto, 0 desa
+                                                            ctiva puerto
+   14 00000000 400FEA08 
+                       SYSCTL_PRGPIO_R
+                               EQU              0x400FEA08  ;Base 0x400F.E000, 
+                                                            Offset 0xA08 indica
+                                                             puerto listo
+   15 00000000 00000008 
+                       SYSCTL_RCGCGPIO_R12
+                               EQU              0x00000008  ;1 Enable and provi
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                                                            de a clock to GPIO 
+                                                            Port D in Run mode
+   16 00000000 00000008 
+                       SYSCTL_PRGPIO_R12
+                               EQU              0x00000008  ;Bandera puerto lis
+                                                            to D
+   17 00000000         
+   18 00000000         ;*******************Direcciones del puerto E************
+                       **********************************
+   19 00000000 4005C0FC 
+                       GPIO_PORTJ0
+                               EQU              0x4005C0FC  ;Se activan todos c
+                                                            omo salida
+   20 00000000 4005C400 
+                       GPIO_PORTJ_DIR_R
+                               EQU              0x4005C400
+   21 00000000 4005C420 
+                       GPIO_PORTJ_AFSEL_R
+                               EQU              0x4005C420
+   22 00000000 4005C510 
+                       GPIO_PORTJ_PUR_R
+                               EQU              0x4005C510
+   23 00000000 4005C51C 
+                       GPIO_PORTJ_DEN_R
+                               EQU              0x4005C51C
+   24 00000000 4005C528 
+                       GPIO_PORTJ_AMSEL_R
+                               EQU              0x4005C528
+   25 00000000 4005C52C 
+                       GPIO_PORTJ_PCTL_R
+                               EQU              0x4005C52C
+   26 00000000         
+   27 00000000 00000010 
+                       SYSCTL_RCGCGPIO_R8
+                               EQU              0x00000010  ; GPIO activa puert
+                                                            o A y 
+   28 00000000 00000010 
+                       SYSCTL_PRGPIO_R8
+                               EQU              0x00000010  ; GPIO Port J Perip
+                                                            heral ReadyVALOR_IN
+                                                            ICIAL
+   29 00000000         
+   30 00000000         ;**********************Direccion para activar SysTick***
+                       ************************
+   31 00000000 E000E018 
+                       SYSCTL_STCURRENT
+                               EQU              0XE000E018
+   32 00000000 E000E014 
+                       SYSCTL_STRELOAD
+                               EQU              0XE000E014
+   33 00000000 E000E010 
+                       SYSCTL_STCTRL
+                               EQU              0XE000E010
+   34 00000000         ;-------------------------------------------------------
+                       ------------------------
+   35 00000000         
+   36 00000000         
+   37 00000000                 AREA             |.text|, CODE, READONLY, ALIGN=
+2
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   38 00000000                 THUMB
+   39 00000000         
+   40 00000000                 IMPORT           Start
+   41 00000000                 EXPORT           UP_LCD
+   42 00000000                 EXPORT           LCD_DELAY
+   43 00000000                 EXPORT           LCD_E
+   44 00000000                 EXPORT           LCD_BUSY
+   45 00000000                 EXPORT           LCD_DATO
+   46 00000000                 EXPORT           LCD_REG
+   47 00000000                 EXPORT           LCD_INI
+   48 00000000                 EXPORT           FUNCION_SET
+   49 00000000                 EXPORT           BORRA_Y_HOME
+   50 00000000                 EXPORT           DISPLAY_ON_CUR_OFF
+   51 00000000                 EXPORT           RETURN_HOMER
+   52 00000000         ;-------------------------------------------------------
+                       ------------------------------------
+   53 00000000         ;Rutinas para el manejo del LCD
+   54 00000000         ;-------------------------------------------------------
+                       ------------------------------------
+   55 00000000         ;UP_LCD: Configuracion el puerto D como salida, bus de d
+                       atos del LCD.
+   56 00000000         
+   57 00000000         
+   58 00000000         ;------------configura puerta D como Salida-------------
+                       ----------------------------
+   59 00000000         UP_LCD
+   60 00000000         
+   61 00000000         ; activa reloj para el puerto D
+   62 00000000 498D            LDR              R1, =SYSCTL_RCGCGPIO_R ; R1 = S
+                                                            YSCTL_RCGCGPIO_R di
+                                                            reccion que  1 acti
+                                                            va puerto
+   63 00000002 6808            LDR              R0, [R1]    ; R0 = [R1] lee val
+                                                            or
+   64 00000004 F040 0008       ORR              R0, R0, #SYSCTL_RCGCGPIO_R12 ; 
+                                                            R0 = R0|SYSCTL_RCGC
+                                                            GPIO_R12, activa re
+                                                            loj de puerto
+   65 00000008 6008            STR              R0, [R1]    ; [R1] = R0  se gua
+                                                            rda
+   66 0000000A         
+   67 0000000A         ;Verifica si el reloj es estable
+   68 0000000A 498C            LDR              R1, =SYSCTL_PRGPIO_R ; R1 = SYS
+                                                            CTL_PRGPIO_R (point
+                                                            er)
+   69 0000000C         GPIONinitloop
+   70 0000000C 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+   71 0000000E F010 0008       ANDS             R0, R0, #SYSCTL_PRGPIO_R12 ; R0
+                                                             = R0&SYSCTL_PRGPIO
+                                                            _R12
+   72 00000012 D0FB            BEQ              GPIONinitloop ; if(R0 == 0), ke
+                                                            ep polling
+   73 00000014         ;----------------------------------------- 
+   74 00000014         ;desbloqueo del pin 7 puerto D
+   75 00000014 498A            LDR              R1, =GPIO_PORTN_LOCK
+   76 00000016 F244 304B 
+              F6C4 404F        MOV32            R0, #0X4C4F434B
+   77 0000001E 6008            STR              R0, [R1]
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+   78 00000020         
+   79 00000020         ;Verifica si se desbloqueo
+   80 00000020 4987            LDR              R1, =GPIO_PORTN_LOCK ; R1 = GPI
+                                                            O_PORTN_LOCK (point
+                                                            er)
+   81 00000022         GPIOUNLOCKinitloop
+   82 00000022 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+   83 00000024 F010 0001       ANDS             R0, R0, #0X00000001 ; R0 = R0&S
+                                                            YSCTL_PRGPIO_R12
+   84 00000028 D1FB            BNE              GPIOUNLOCKinitloop ; if(R0 == 0
+                                                            ), keep polling
+   85 0000002A         
+   86 0000002A         ;Desbloquea el pin D7
+   87 0000002A 4986            LDR              R1, =GPIO_PORTN_CR
+   88 0000002C 6808            LDR              R0, [R1]
+   89 0000002E F040 0080       ORR              R0, R0, #0X0080
+   90 00000032 6008            STR              R0, [R1]
+   91 00000034         
+   92 00000034         
+   93 00000034         ; Direccion de salida
+   94 00000034 4984            LDR              R1, =GPIO_PORTN_DIR_R ; R1 = GP
+                                                            IO_PORTN_DIR_R 
+   95 00000036 6808            LDR              R0, [R1]    ; R0 = [R1] 
+   96 00000038 F040 00FF       ORR              R0, R0, #0xFF ; R0 = R0|0xFF (t
+                                                            odos los pines del 
+                                                            puerto D salida)
+   97 0000003C 6008            STR              R0, [R1]    ; [R1] = R0
+   98 0000003E         
+   99 0000003E         
+  100 0000003E         ; Registro de funcion alternativa
+  101 0000003E 4983            LDR              R1, =GPIO_PORTN_AFSEL_R ; R1 = 
+                                                            GPIO_PORTN_AFSEL_R 
+                                                            (pointer)
+  102 00000040 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  103 00000042 F020 00FF       BIC              R0, R0, #0xFF ; R0 = R0&~0x02 (
+                                                            disable alt funct o
+                                                            n PN1)
+  104 00000046 6008            STR              R0, [R1]    ; [R1] = R0
+  105 00000048         
+  106 00000048         ; set digital enable register
+  107 00000048 4981            LDR              R1, =GPIO_PORTN_DEN_R ; R1 = GP
+                                                            IO_PORTN_DEN_R (poi
+                                                            nter)
+  108 0000004A 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  109 0000004C F040 00FF       ORR              R0, R0, #0xFF ; R0 = R0|0xFF (a
+                                                            ctiva digital I/O  
+                                                            PD0-PD7)
+  110 00000050 6008            STR              R0, [R1]    ; [R1] = R0
+  111 00000052         
+  112 00000052         ; set port control register
+  113 00000052 4980            LDR              R1, =GPIO_PORTN_PCTL_R ; R1 = G
+                                                            PIO_PORTN_PCTL_R (p
+                                                            ointer)
+  114 00000054 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  115 00000056 F020 30FF       BIC              R0, R0, #0xFFFFFFFF ; R0 = R0&0
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+                                                            xFFFFFFFF (clear bi
+                                                            t1 field)
+  116 0000005A 6008            STR              R0, [R1]    ; [R1] = R0
+  117 0000005C         
+  118 0000005C         
+  119 0000005C         ; set analog mode select register
+  120 0000005C 497E            LDR              R1, =GPIO_PORTN_AMSEL_R ; R1 = 
+                                                            GPIO_PORTN_AMSEL_R 
+                                                            (pointer)
+  121 0000005E 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  122 00000060 F020 00FF       BIC              R0, R0, #0xFF ; R0 = R0&~0xFF (
+                                                            disable analog func
+                                                            tionality on PD0-PD
+                                                            7)
+  123 00000064 6008            STR              R0, [R1]    ; [R1] = R0
+  124 00000066         
+  125 00000066         
+  126 00000066         
+  127 00000066         ;------------Configura puerto A como salida-------------
+                       ------------------------------------
+  128 00000066         
+  129 00000066         ; activate clock for Port J
+  130 00000066 4974            LDR              R1, =SYSCTL_RCGCGPIO_R ; R1 = S
+                                                            YSCTL_RCGCGPIO_R (p
+                                                            ointer)
+  131 00000068 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  132 0000006A F040 0010       ORR              R0, R0, #SYSCTL_RCGCGPIO_R8 ; R
+                                                            0 = R0|SYSCTL_RCGCG
+                                                            PIO_R8
+  133 0000006E 6008            STR              R0, [R1]    ; [R1] = R0
+  134 00000070         
+  135 00000070         ; allow time for clock to stabilize
+  136 00000070 4972            LDR              R1, =SYSCTL_PRGPIO_R ; R1 = SYS
+                                                            CTL_PRGPIO_R (point
+                                                            er)
+  137 00000072         
+  138 00000072         GPIOJinitloop
+  139 00000072 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  140 00000074 F010 0010       ANDS             R0, R0, #SYSCTL_PRGPIO_R8 ; R0 
+                                                            = R0&SYSCTL_PRGPIO_
+                                                            R8
+  141 00000078 D0FB            BEQ              GPIOJinitloop ; if(R0 == 0), ke
+                                                            ep polling
+  142 0000007A         
+  143 0000007A         ; set direction register
+  144 0000007A 4978            LDR              R1, =GPIO_PORTJ_DIR_R ; R1 = GP
+                                                            IO_PORTJ_DIR_R (poi
+                                                            nter)
+  145 0000007C 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  146 0000007E F040 00FF       ORR              R0, R0, #0xFF ; R0 = R0&~0x01 (
+                                                            make PJ0 in (PJ0 bu
+                                                            ilt-in SW1))
+  147 00000082 6008            STR              R0, [R1]    ; [R1] = R0
+  148 00000084         
+  149 00000084         ; set alternate function register
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  150 00000084 4976            LDR              R1, =GPIO_PORTJ_AFSEL_R ; R1 = 
+                                                            GPIO_PORTJ_AFSEL_R 
+                                                            (pointer)
+  151 00000086 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  152 00000088 F020 00FF       BIC              R0, R0, #0xFF ; R0 = R0&~0x01 (
+                                                            disable alt funct o
+                                                            n PJ0)
+  153 0000008C 6008            STR              R0, [R1]    ; [R1] = R0
+  154 0000008E         
+  155 0000008E         ; set digital enable register
+  156 0000008E 4975            LDR              R1, =GPIO_PORTJ_DEN_R ; R1 = GP
+                                                            IO_PORTJ_DEN_R (poi
+                                                            nter)
+  157 00000090 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  158 00000092 F040 00FF       ORR              R0, R0, #0xFF ; R0 = R0|0x01 (e
+                                                            nable digital I/O o
+                                                            n PJ0)
+  159 00000096 6008            STR              R0, [R1]    ; [R1] = R0
+  160 00000098         
+  161 00000098         ; set port control register
+  162 00000098 4973            LDR              R1, =GPIO_PORTJ_PCTL_R ; R1 = G
+                                                            PIO_PORTJ_PCTL_R (p
+                                                            ointer)
+  163 0000009A 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  164 0000009C F020 30FF       BIC              R0, R0, #0xFFFFFFFF ; R0 = R0&0
+                                                            xFFFFFFF0 (clear bi
+                                                            t0 field)
+  165 000000A0 6008            STR              R0, [R1]    ; [R1] = R0
+  166 000000A2         
+  167 000000A2         ; set analog mode select register
+  168 000000A2 4972            LDR              R1, =GPIO_PORTJ_AMSEL_R ; R1 = 
+                                                            GPIO_PORTJ_AMSEL_R 
+                                                            (pointer)
+  169 000000A4 6808            LDR              R0, [R1]    ; R0 = [R1] (value)
+                                                            
+  170 000000A6 F020 00FF       BIC              R0, R0, #0xFF ; R0 = R0&~0x01 (
+                                                            disable analog func
+                                                            tionality on PJ0)
+  171 000000AA 6008            STR              R0, [R1]    ; [R1] = R0
+  172 000000AC         
+  173 000000AC         ;------------Activa RS=1----(modo dato)-PORTA0=> RS=1, P
+                       ORTA1=> RD/WR=0,  PORTA2 =>E=0--
+  174 000000AC 4870            LDR              R0, =GPIO_PORTJ0
+  175 000000AE F04F 0101       MOV              R1, #0x01
+  176 000000B2 6001            STR              R1, [R0]    ;RS=A0=1, RD/WR =A1
+                                                            =0, E=A2=0 (modo da
+                                                            to, escribir, no ac
+                                                            tivado)
+  177 000000B4         
+  178 000000B4 B500            PUSH             {LR}
+  179 000000B6 F7FF FFFE       BL               LCD_INI
+  180 000000BA F85D EB04       POP              {LR}
+  181 000000BE 4770            BX               LR
+  182 000000C0         
+  183 000000C0         ;******************************RETARDO DE 15 ms*********
+                       ****************************
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  184 000000C0         ;RUTINA LCD_DELAY: Se trata de un rutina que implementa 
+                       un retardo 
+  185 000000C0         ;o temporizaci¢n de 5 ms. Utiliza dos variables llamadas
+                        LCD_TEMP_1 
+  186 000000C0         ;y LCD_TEMP_2, que se van decrementando hasta alcanzar d
+                       icho tiempo.
+  187 000000C0         ;*******************************************************
+                       ****************************
+  188 000000C0         
+  189 000000C0         LCD_DELAY
+  190 000000C0         
+  191 000000C0         ;-------------------------------------------------------
+                       --------------
+  192 000000C0 486C            LDR              R0, =SYSCTL_STCTRL
+  193 000000C2 6801            LDR              R1, [R0]
+  194 000000C4 F001 0100       AND              R1, #0X00000000
+  195 000000C8 6001            STR              R1, [R0]
+  196 000000CA         ;---------------------------CUENTA----------------------
+                       --------------
+  197 000000CA 486B            LDR              R0, =SYSCTL_STRELOAD
+  198 000000CC F64E 215F       LDR              R1, =0x00EA5F ;hay que cambiar
+  199 000000D0 6001            STR              R1, [R0]
+  200 000000D2         ;-------------------------------------------------------
+                       --------------
+  201 000000D2 486A            LDR              R0, =SYSCTL_STCURRENT
+  202 000000D4 F04F 0100       MOV              R1, #0
+  203 000000D8 6001            STR              R1, [R0]
+  204 000000DA         ;-------------------------------------------------------
+                       --------------
+  205 000000DA 4866            LDR              R0, =SYSCTL_STCTRL
+  206 000000DC 6801            LDR              R1, [R0]
+  207 000000DE F041 0101       ORR              R1, #0X00000001
+  208 000000E2 6001            STR              R1, [R0]
+  209 000000E4         ;-------------------------------------------------------
+                       -------------
+  210 000000E4 4863            LDR              R0, =SYSCTL_STCTRL
+  211 000000E6         L1
+  212 000000E6 6801            LDR              R1, [R0]
+  213 000000E8 F44F 3280       MOV              R2, #0x00010000
+  214 000000EC EA01 0102       AND              R1, R2      ;verifica si ya se 
+                                                            desbordo
+  215 000000F0 B901            CBNZ             R1, salta   ;Salta si se desbor
+                                                            do
+  216 000000F2 E7F8            B                L1          ;Salta si no se des
+                                                            bordo
+  217 000000F4         salta
+  218 000000F4 4770            BX               LR
+  219 000000F6         ;********************PORTA0=> RS=1, PORTA1=> RD/WR,  POR
+                       TA2 =>E********
+  220 000000F6         
+  221 000000F6         LCD_E
+  222 000000F6         
+  223 000000F6 BF00            NOP
+  224 000000F8 485D            LDR              R0, =GPIO_PORTJ0
+  225 000000FA 6801            LDR              R1, [R0]
+  226 000000FC F041 0104       ORR              R1, R1, #0X04
+  227 00000100 6001            STR              R1, [R0]    ; PORTA2 =>E=1
+  228 00000102 BF00            NOP
+  229 00000104 BF00            NOP
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+  230 00000106 F021 0104       BIC              R1, R1, #0X04 ; PORTA2 =>E=0
+  231 0000010A 6001            STR              R1, [R0]
+  232 0000010C BF00            NOP
+  233 0000010E         
+  234 0000010E 4770            BX               LR          ;REGRESA DE SUBRUTI
+                                                            NA
+  235 00000110         ;*******************************************************
+                       *************************
+  236 00000110         ;LCD_BUSY: Lectura del Flag Busy y la direccion.
+  237 00000110         ;
+  238 00000110         LCD_BUSY
+  239 00000110         
+  240 00000110         ;---------Pone LCD en Modo RD=1----PORTA=> RS=1, PORTA1=
+                       > RD=1,  PORTA2 =>E=0-----
+  241 00000110 4857            LDR              R0, =GPIO_PORTJ0
+  242 00000112 6801            LDR              R1, [R0]
+  243 00000114 F04F 0202       MOV              R2, #0X02   ;RS=0 comando,  R/W
+                                                             = 1 lectura,  E=0 
+                                                            desactivado  
+  244 00000118 6002            STR              R2, [R0]    ;PORTA1=> RD/WR=1
+  245 0000011A         ;----------------Configura el puerto D como entrada-----
+                       ------------------------ 
+  246 0000011A         ; Direccion de salida
+  247 0000011A 494B            LDR              R1, =GPIO_PORTN_DIR_R ; R1 = GP
+                                                            IO_PORTN_DIR_R 
+  248 0000011C 6808            LDR              R0, [R1]    ; R0 = [R1] 
+  249 0000011E F000 0000       AND              R0, R0, #0x00 ; R0 = R0|0x00 (t
+                                                            odos los pines del 
+                                                            puerto D entrada)
+  250 00000122 6008            STR              R0, [R1]    ; [R1] = R0
+  251 00000124         
+  252 00000124         ;**************PORTA0=> RS=1, PORTA1=> RD=1,  PORTA2 =>E
+                       =1********
+  253 00000124 4852            LDR              R0, =GPIO_PORTJ0
+  254 00000126 6801            LDR              R1, [R0]
+  255 00000128 F041 0104       ORR              R1, R1, #0X04
+  256 0000012C 6001            STR              R1, [R0]    ;PORTA2 =>E=1 ACTIV
+                                                            A LCD
+  257 0000012E         ;--------------Lee puerto D-----------------------------
+                       --------------
+  258 0000012E 4854            LDR              R0, =GPIO_PORTN1
+  259 00000130         L2
+  260 00000130 6801            LDR              R1, [R0]
+  261 00000132 F011 0180       ANDS             R1, R1, #0x80
+  262 00000136 B101            CBZ              R1, CONTI
+  263 00000138 E7FA            B                L2
+  264 0000013A         
+  265 0000013A         ;**************PORTA=> RS=1, PORTA1=> RD=1,  PORTA2 =>E=
+                       0********
+  266 0000013A         CONTI
+  267 0000013A 484D            LDR              R0, =GPIO_PORTJ0
+  268 0000013C 6801            LDR              R1, [R0]
+  269 0000013E F021 0104       BIC              R1, R1, #0X04
+  270 00000142 6001            STR              R1, [R0]    ;PORTA2 =>E=0 DESAC
+                                                            TIVA LCD
+  271 00000144 BF00            NOP
+  272 00000146         
+  273 00000146         ;---------------Configura Puerto D como Salida----------
+                       ---------------------------------
+
+
+
+ARM Macro Assembler    Page 9 
+
+
+  274 00000146         
+  275 00000146         ; Direccion de salida
+  276 00000146 4940            LDR              R1, =GPIO_PORTN_DIR_R ; R1 = GP
+                                                            IO_PORTN_DIR_R 
+  277 00000148 6808            LDR              R0, [R1]    ; R0 = [R1] 
+  278 0000014A F040 00FF       ORR              R0, R0, #0xFF ; R0 = R0|0x00 (t
+                                                            odos los pines del 
+                                                            puerto D Salida)
+  279 0000014E 6008            STR              R0, [R1]    ; [R1] = R0
+  280 00000150         ;--------------------------PORTA=> RS=1, PORTA1=> WR=0, 
+                        PORTA2 =>E=0-------------------------------------------
+                       -------
+  281 00000150         ;                ;Pone LCD en modo WR=0    bcf PORTA,1 
+  282 00000150 4847            LDR              R0, =GPIO_PORTJ0
+  283 00000152 6801            LDR              R1, [R0]
+  284 00000154 F021 0102       BIC              R1, R1, #0X02
+  285 00000158 6001            STR              R1, [R0]    ;PORTA1=> WR=0 DESA
+                                                            CTIVA LECTURA
+  286 0000015A 4770            BX               LR
+  287 0000015C         
+  288 0000015C         ;----------------------------PORTA0=> RS=1, PORTA1=> RD=
+                       1,  PORTA2 =>E=0**------------------
+  289 0000015C         ;LCD_DATO: Escritura de datos en DDRAM o CGRAM
+  290 0000015C         ;El dato tiene que estar en R6
+  291 0000015C         
+  292 0000015C         LCD_DATO
+  293 0000015C         ;---------------bcf PORTA,0    ;Desactiva RS=0 (modo com
+                       ando) ;Desactiva RS=0  bcf PORTA,0 (modo comando)  
+  294 0000015C B500            PUSH             {LR}
+  295 0000015E 4844            LDR              R0, =GPIO_PORTJ0
+  296 00000160 6801            LDR              R1, [R0]
+  297 00000162 F021 0101       BIC              R1, R1, #0X01
+  298 00000166 6001            STR              R1, [R0]    ;RS=0 MODO COMANDO
+  299 00000168         ;---------------------El dato esta en R6----------------
+                       -------------------------------
+  300 00000168         
+  301 00000168 B500            PUSH             {LR}
+  302 0000016A F7FF FFFE       BL               LCD_BUSY
+  303 0000016E F85D EB04       POP              {LR}
+  304 00000172 4943            LDR              R1, =GPIO_PORTN1
+  305 00000174 600E            STR              R6, [R1]
+  306 00000176 483E            LDR              R0, =GPIO_PORTJ0
+  307 00000178 6801            LDR              R1, [R0]
+  308 0000017A F041 0101       ORR              R1, R1, #0X01 ;Activa RS=1   (b
+                                                            sf PORTA,0) (modo d
+                                                            ato) 
+  309 0000017E 6001            STR              R1, [R0]
+  310 00000180 F85D EB04       POP              {LR}
+  311 00000184 E7FE            B                LCD_E
+  312 00000186         ;-------------------------------------------------------
+                       -------------------
+  313 00000186         ;LCD_REG: Escritura de comandos del LCD
+  314 00000186         ;W ==> portd
+  315 00000186         ;
+  316 00000186         LCD_REG
+  317 00000186         
+  318 00000186         ;---------------bcf PORTA,0    ;Desactiva RS=0 (modo com
+                       ando) ;Desactiva RS=0  bcf PORTA,0 (modo comando)  
+  319 00000186         
+
+
+
+ARM Macro Assembler    Page 10 
+
+
+  320 00000186 483A            LDR              R0, =GPIO_PORTJ0
+  321 00000188 6801            LDR              R1, [R0]
+  322 0000018A F021 0101       BIC              R1, R1, #0X01
+  323 0000018E 6001            STR              R1, [R0]    ;RS=0 (modo comando
+                                                            )
+  324 00000190         
+  325 00000190 B500            PUSH             {LR}
+  326 00000192 F7FF FFFE       BL               LCD_BUSY
+  327 00000196 F85D EB04       POP              {LR}
+  328 0000019A 4939            LDR              R1, =GPIO_PORTN1
+  329 0000019C 600E            STR              R6, [R1]
+  330 0000019E E7FE            B                LCD_E
+  331 000001A0         
+  332 000001A0         ;------------------------FUNCION QUE INICIALIZA EL LCD--
+                       -----------------------------------------
+  333 000001A0         
+  334 000001A0         LCD_INI
+  335 000001A0 B500            PUSH             {LR}
+  336 000001A2 4833            LDR              R0, =GPIO_PORTJ0
+  337 000001A4 6801            LDR              R1, [R0]
+  338 000001A6 F021 0101       BIC              R1, R1, #0X01
+  339 000001AA 6001            STR              R1, [R0]    ;RS=0 (modo comando
+                                                            )
+  340 000001AC         
+  341 000001AC 4934            LDR              R1, =GPIO_PORTN1
+  342 000001AE F04F 0038       MOV              R0, #0x38
+  343 000001B2 6008            STR              R0, [R1]
+  344 000001B4 F7FF FFFE       BL               LCD_E
+  345 000001B8 F7FF FFFE       BL               LCD_DELAY
+  346 000001BC         
+  347 000001BC         
+  348 000001BC         
+  349 000001BC 482C            LDR              R0, =GPIO_PORTJ0
+  350 000001BE 6801            LDR              R1, [R0]
+  351 000001C0 F021 0101       BIC              R1, R1, #0X01
+  352 000001C4 6001            STR              R1, [R0]    ;RS=0 (modo comando
+                                                            )
+  353 000001C6         
+  354 000001C6 492E            LDR              R1, =GPIO_PORTN1
+  355 000001C8 F04F 0038       MOV              R0, #0X38
+  356 000001CC 6008            STR              R0, [R1]
+  357 000001CE F7FF FFFE       BL               LCD_E
+  358 000001D2 F7FF FFFE       BL               LCD_DELAY
+  359 000001D6         
+  360 000001D6         
+  361 000001D6 4826            LDR              R0, =GPIO_PORTJ0
+  362 000001D8 6801            LDR              R1, [R0]
+  363 000001DA F021 0101       BIC              R1, R1, #0X01
+  364 000001DE 6001            STR              R1, [R0]    ;RS=0 (modo comando
+                                                            )
+  365 000001E0         
+  366 000001E0 4927            LDR              R1, =GPIO_PORTN1
+  367 000001E2 F04F 0038       MOV              R0, #0X38
+  368 000001E6 6008            STR              R0, [R1]
+  369 000001E8 F7FF FFFE       BL               LCD_E
+  370 000001EC F7FF FFFE       BL               LCD_DELAY
+  371 000001F0 F85D EB04       POP              {LR}
+  372 000001F4 4770            BX               LR
+  373 000001F6         
+
+
+
+ARM Macro Assembler    Page 11 
+
+
+  374 000001F6         ;-------------------------------------------------------
+                       ------------------
+  375 000001F6         ;FUNCION SET :Imterfase de 8 bits DL=1, numero de lineas
+                        dos N=1, matriz 5x8
+  376 000001F6         ;       0 0 1 DL N F - - 
+  377 000001F6         
+  378 000001F6         FUNCION_SET
+  379 000001F6 B500            PUSH             {LR}
+  380 000001F8 F04F 0638       MOV              R6, #0X38
+  381 000001FC F7FF FFFE       BL               LCD_REG
+  382 00000200 F85D EB04       POP              {LR}
+  383 00000204 4770            BX               LR
+  384 00000206         ;-------------------------------------------------------
+                       ------------------
+  385 00000206         ;BORRA_Y_HOME: Borra el display y retorna el cursor a la
+                        posici¢n 0 
+  386 00000206         ;
+  387 00000206         
+  388 00000206         BORRA_Y_HOME
+  389 00000206 B500            PUSH             {LR}
+  390 00000208 F04F 0601       MOV              R6, #0X01
+  391 0000020C F7FF FFFE       BL               LCD_REG
+  392 00000210 F85D EB04       POP              {LR}
+  393 00000214 4770            BX               LR
+  394 00000216         ;-------------------------------------------------------
+                       ------------------
+  395 00000216         ;DISPLAY_ON_CUR_OFF: Control ON/OFF del display y cursor
+                       .
+  396 00000216         ;Activa Display desactiva cursor.
+  397 00000216         
+  398 00000216         DISPLAY_ON_CUR_OFF
+  399 00000216 B500            PUSH             {LR}
+  400 00000218 F04F 060E       MOV              R6, #0X0E
+  401 0000021C F7FF FFFE       BL               LCD_REG
+  402 00000220 F85D EB04       POP              {LR}
+  403 00000224 4770            BX               LR
+  404 00000226         ;-------------------------------------------------------
+                       -------------------
+  405 00000226         
+  406 00000226         RETURN_HOMER
+  407 00000226 B500            PUSH             {LR}
+  408 00000228 F04F 0602       MOV              R6, #0X02
+  409 0000022C F7FF FFFE       BL               LCD_REG
+  410 00000230 F85D EB04       POP              {LR}
+  411 00000234 4770            BX               LR
+  412 00000236         ;-------------------------------------------------------
+                       ----------------- 
+  413 00000236 00 00           ALIGN                        ; make sure the end
+                                                             of this section is
+                                                             aligned
+  414 00000238                 END                          ; end of file
+              400FE608 
+              400FEA08 
+              4005B520 
+              4005B524 
+              4005B400 
+              4005B420 
+              4005B51C 
+              4005B52C 
+
+
+
+ARM Macro Assembler    Page 12 
+
+
+              4005B528 
+              4005C400 
+              4005C420 
+              4005C51C 
+              4005C52C 
+              4005C528 
+              4005C0FC 
+              E000E010 
+              E000E014 
+              E000E018 
+              4005B3FC 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\lcd.d -o.\objects\lcd.o -ID:\Escritorio\RESPALDO\RTE\
+_CodigoLCD -I"D:\OS C (Postizo)\uVision\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include"
+ -I"D:\OS C (Postizo)\uVision\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C1
+29" --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSION SETA 522" --pred
+efine="_RTE_ SETA 1" --predefine="TM4C1294NCPDT SETA 1" --list=.\listings\lcd.l
+st LCD.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 37 in file LCD.s
+   Uses
+      None
+Comment: .text unused
+BORRA_Y_HOME 00000206
+
+Symbol: BORRA_Y_HOME
+   Definitions
+      At line 388 in file LCD.s
+   Uses
+      At line 49 in file LCD.s
+Comment: BORRA_Y_HOME used once
+CONTI 0000013A
+
+Symbol: CONTI
+   Definitions
+      At line 266 in file LCD.s
+   Uses
+      At line 262 in file LCD.s
+Comment: CONTI used once
+DISPLAY_ON_CUR_OFF 00000216
+
+Symbol: DISPLAY_ON_CUR_OFF
+   Definitions
+      At line 398 in file LCD.s
+   Uses
+      At line 50 in file LCD.s
+Comment: DISPLAY_ON_CUR_OFF used once
+FUNCION_SET 000001F6
+
+Symbol: FUNCION_SET
+   Definitions
+      At line 378 in file LCD.s
+   Uses
+      At line 48 in file LCD.s
+Comment: FUNCION_SET used once
+GPIOJinitloop 00000072
+
+Symbol: GPIOJinitloop
+   Definitions
+      At line 138 in file LCD.s
+   Uses
+      At line 141 in file LCD.s
+Comment: GPIOJinitloop used once
+GPIONinitloop 0000000C
+
+Symbol: GPIONinitloop
+   Definitions
+      At line 69 in file LCD.s
+   Uses
+      At line 72 in file LCD.s
+Comment: GPIONinitloop used once
+GPIOUNLOCKinitloop 00000022
+
+Symbol: GPIOUNLOCKinitloop
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 81 in file LCD.s
+   Uses
+      At line 84 in file LCD.s
+Comment: GPIOUNLOCKinitloop used once
+L1 000000E6
+
+Symbol: L1
+   Definitions
+      At line 211 in file LCD.s
+   Uses
+      At line 216 in file LCD.s
+Comment: L1 used once
+L2 00000130
+
+Symbol: L2
+   Definitions
+      At line 259 in file LCD.s
+   Uses
+      At line 263 in file LCD.s
+Comment: L2 used once
+LCD_BUSY 00000110
+
+Symbol: LCD_BUSY
+   Definitions
+      At line 238 in file LCD.s
+   Uses
+      At line 44 in file LCD.s
+      At line 302 in file LCD.s
+      At line 326 in file LCD.s
+
+LCD_DATO 0000015C
+
+Symbol: LCD_DATO
+   Definitions
+      At line 292 in file LCD.s
+   Uses
+      At line 45 in file LCD.s
+Comment: LCD_DATO used once
+LCD_DELAY 000000C0
+
+Symbol: LCD_DELAY
+   Definitions
+      At line 189 in file LCD.s
+   Uses
+      At line 42 in file LCD.s
+      At line 345 in file LCD.s
+      At line 358 in file LCD.s
+      At line 370 in file LCD.s
+
+LCD_E 000000F6
+
+Symbol: LCD_E
+   Definitions
+      At line 221 in file LCD.s
+   Uses
+      At line 43 in file LCD.s
+      At line 311 in file LCD.s
+      At line 330 in file LCD.s
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 344 in file LCD.s
+      At line 357 in file LCD.s
+      At line 369 in file LCD.s
+
+LCD_INI 000001A0
+
+Symbol: LCD_INI
+   Definitions
+      At line 334 in file LCD.s
+   Uses
+      At line 47 in file LCD.s
+      At line 179 in file LCD.s
+
+LCD_REG 00000186
+
+Symbol: LCD_REG
+   Definitions
+      At line 316 in file LCD.s
+   Uses
+      At line 46 in file LCD.s
+      At line 381 in file LCD.s
+      At line 391 in file LCD.s
+      At line 401 in file LCD.s
+      At line 409 in file LCD.s
+
+RETURN_HOMER 00000226
+
+Symbol: RETURN_HOMER
+   Definitions
+      At line 406 in file LCD.s
+   Uses
+      At line 51 in file LCD.s
+Comment: RETURN_HOMER used once
+UP_LCD 00000000
+
+Symbol: UP_LCD
+   Definitions
+      At line 59 in file LCD.s
+   Uses
+      At line 41 in file LCD.s
+Comment: UP_LCD used once
+salta 000000F4
+
+Symbol: salta
+   Definitions
+      At line 217 in file LCD.s
+   Uses
+      At line 215 in file LCD.s
+Comment: salta used once
+19 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+GPIO_PORTJ0 4005C0FC
+
+Symbol: GPIO_PORTJ0
+   Definitions
+      At line 19 in file LCD.s
+   Uses
+      At line 174 in file LCD.s
+      At line 224 in file LCD.s
+      At line 241 in file LCD.s
+      At line 253 in file LCD.s
+      At line 267 in file LCD.s
+      At line 282 in file LCD.s
+      At line 295 in file LCD.s
+      At line 306 in file LCD.s
+      At line 320 in file LCD.s
+      At line 336 in file LCD.s
+      At line 349 in file LCD.s
+      At line 361 in file LCD.s
+
+GPIO_PORTJ_AFSEL_R 4005C420
+
+Symbol: GPIO_PORTJ_AFSEL_R
+   Definitions
+      At line 21 in file LCD.s
+   Uses
+      At line 150 in file LCD.s
+Comment: GPIO_PORTJ_AFSEL_R used once
+GPIO_PORTJ_AMSEL_R 4005C528
+
+Symbol: GPIO_PORTJ_AMSEL_R
+   Definitions
+      At line 24 in file LCD.s
+   Uses
+      At line 168 in file LCD.s
+Comment: GPIO_PORTJ_AMSEL_R used once
+GPIO_PORTJ_DEN_R 4005C51C
+
+Symbol: GPIO_PORTJ_DEN_R
+   Definitions
+      At line 23 in file LCD.s
+   Uses
+      At line 156 in file LCD.s
+Comment: GPIO_PORTJ_DEN_R used once
+GPIO_PORTJ_DIR_R 4005C400
+
+Symbol: GPIO_PORTJ_DIR_R
+   Definitions
+      At line 20 in file LCD.s
+   Uses
+      At line 144 in file LCD.s
+Comment: GPIO_PORTJ_DIR_R used once
+GPIO_PORTJ_PCTL_R 4005C52C
+
+Symbol: GPIO_PORTJ_PCTL_R
+   Definitions
+      At line 25 in file LCD.s
+   Uses
+      At line 162 in file LCD.s
+Comment: GPIO_PORTJ_PCTL_R used once
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+GPIO_PORTJ_PUR_R 4005C510
+
+Symbol: GPIO_PORTJ_PUR_R
+   Definitions
+      At line 22 in file LCD.s
+   Uses
+      None
+Comment: GPIO_PORTJ_PUR_R unused
+GPIO_PORTN1 4005B3FC
+
+Symbol: GPIO_PORTN1
+   Definitions
+      At line 3 in file LCD.s
+   Uses
+      At line 258 in file LCD.s
+      At line 304 in file LCD.s
+      At line 328 in file LCD.s
+      At line 341 in file LCD.s
+      At line 354 in file LCD.s
+      At line 366 in file LCD.s
+
+GPIO_PORTN_AFSEL_R 4005B420
+
+Symbol: GPIO_PORTN_AFSEL_R
+   Definitions
+      At line 5 in file LCD.s
+   Uses
+      At line 101 in file LCD.s
+Comment: GPIO_PORTN_AFSEL_R used once
+GPIO_PORTN_AMSEL_R 4005B528
+
+Symbol: GPIO_PORTN_AMSEL_R
+   Definitions
+      At line 7 in file LCD.s
+   Uses
+      At line 120 in file LCD.s
+Comment: GPIO_PORTN_AMSEL_R used once
+GPIO_PORTN_CR 4005B524
+
+Symbol: GPIO_PORTN_CR
+   Definitions
+      At line 10 in file LCD.s
+   Uses
+      At line 87 in file LCD.s
+Comment: GPIO_PORTN_CR used once
+GPIO_PORTN_DEN_R 4005B51C
+
+Symbol: GPIO_PORTN_DEN_R
+   Definitions
+      At line 6 in file LCD.s
+   Uses
+      At line 107 in file LCD.s
+Comment: GPIO_PORTN_DEN_R used once
+GPIO_PORTN_DIR_R 4005B400
+
+Symbol: GPIO_PORTN_DIR_R
+   Definitions
+      At line 4 in file LCD.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Absolute symbols
+
+      At line 94 in file LCD.s
+      At line 247 in file LCD.s
+      At line 276 in file LCD.s
+
+GPIO_PORTN_LOCK 4005B520
+
+Symbol: GPIO_PORTN_LOCK
+   Definitions
+      At line 9 in file LCD.s
+   Uses
+      At line 75 in file LCD.s
+      At line 80 in file LCD.s
+
+GPIO_PORTN_PCTL_R 4005B52C
+
+Symbol: GPIO_PORTN_PCTL_R
+   Definitions
+      At line 8 in file LCD.s
+   Uses
+      At line 113 in file LCD.s
+Comment: GPIO_PORTN_PCTL_R used once
+SYSCTL_PRGPIO_R 400FEA08
+
+Symbol: SYSCTL_PRGPIO_R
+   Definitions
+      At line 14 in file LCD.s
+   Uses
+      At line 68 in file LCD.s
+      At line 136 in file LCD.s
+
+SYSCTL_PRGPIO_R12 00000008
+
+Symbol: SYSCTL_PRGPIO_R12
+   Definitions
+      At line 16 in file LCD.s
+   Uses
+      At line 71 in file LCD.s
+Comment: SYSCTL_PRGPIO_R12 used once
+SYSCTL_PRGPIO_R8 00000010
+
+Symbol: SYSCTL_PRGPIO_R8
+   Definitions
+      At line 28 in file LCD.s
+   Uses
+      At line 140 in file LCD.s
+Comment: SYSCTL_PRGPIO_R8 used once
+SYSCTL_RCGCGPIO_R 400FE608
+
+Symbol: SYSCTL_RCGCGPIO_R
+   Definitions
+      At line 13 in file LCD.s
+   Uses
+      At line 62 in file LCD.s
+      At line 130 in file LCD.s
+
+SYSCTL_RCGCGPIO_R12 00000008
+
+Symbol: SYSCTL_RCGCGPIO_R12
+   Definitions
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Absolute symbols
+
+      At line 15 in file LCD.s
+   Uses
+      At line 64 in file LCD.s
+Comment: SYSCTL_RCGCGPIO_R12 used once
+SYSCTL_RCGCGPIO_R8 00000010
+
+Symbol: SYSCTL_RCGCGPIO_R8
+   Definitions
+      At line 27 in file LCD.s
+   Uses
+      At line 132 in file LCD.s
+Comment: SYSCTL_RCGCGPIO_R8 used once
+SYSCTL_STCTRL E000E010
+
+Symbol: SYSCTL_STCTRL
+   Definitions
+      At line 33 in file LCD.s
+   Uses
+      At line 192 in file LCD.s
+      At line 205 in file LCD.s
+      At line 210 in file LCD.s
+
+SYSCTL_STCURRENT E000E018
+
+Symbol: SYSCTL_STCURRENT
+   Definitions
+      At line 31 in file LCD.s
+   Uses
+      At line 201 in file LCD.s
+Comment: SYSCTL_STCURRENT used once
+SYSCTL_STRELOAD E000E014
+
+Symbol: SYSCTL_STRELOAD
+   Definitions
+      At line 32 in file LCD.s
+   Uses
+      At line 197 in file LCD.s
+Comment: SYSCTL_STRELOAD used once
+24 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+Start 00000000
+
+Symbol: Start
+   Definitions
+      At line 40 in file LCD.s
+   Uses
+      None
+Comment: Start unused
+1 symbol
+381 symbols in table
